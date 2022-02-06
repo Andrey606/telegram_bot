@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  word: MyString
+  translation: MyString
+  parts_of_speech: MyString
+  level: MyString
+  examples: 
+
+two:
+  word: MyString
+  translation: MyString
+  parts_of_speech: MyString
+  level: MyString
+  examples: 

@@ -72,3 +72,12 @@ group :test do
 end
 
 gem 'telegram-bot-ruby'
+gem 'byebug'
+gem 'pdf-reader'
+gem 'easy_translate'
+# gem 'language_converter'
+# gem 'translation'
+# gem 'language-translator'
+gem 'execjs'
+gem 'node-runner'
+gem 'json'

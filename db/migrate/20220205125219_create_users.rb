@@ -4,6 +4,7 @@ class CreateUsers < ActiveRecord::Migration[7.0]
       t.string :name
       t.integer :telegram_id
       t.string :step
+      t.string :chat_id
 
       t.timestamps
     end
