@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  words_per_week: 1
+  planning_day: MyString
+  planning_time: 2022-02-07 22:09:29
+
+two:
+  user: two
+  words_per_week: 1
+  planning_day: MyString
+  planning_time: 2022-02-07 22:09:29

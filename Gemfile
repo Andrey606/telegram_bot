@@ -81,3 +81,5 @@ gem 'easy_translate'
 gem 'execjs'
 gem 'node-runner'
 gem 'json'
+# gem 'whenever', require: false
+gem 'rufus-scheduler', "~> 3.8.1"

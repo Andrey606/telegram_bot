@@ -7,3 +7,7 @@ node v >= 14
 source = open("./telegram/reverso.js").read
 context = ExecJS.compile(source)
 context.call('exports')
+
+gem install whenever
+whenever --update-crontab
+bundle exec wheneverize .

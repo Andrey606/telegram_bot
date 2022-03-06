@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_06_152011) do
+ActiveRecord::Schema.define(version: 2022_02_07_222727) do
 
   create_table "dictionaries", force: :cascade do |t|
     t.string "word"
@@ -41,13 +41,16 @@ ActiveRecord::Schema.define(version: 2022_02_06_152011) do
     t.index ["user_id"], name: "index_documents_on_user_id"
   end
 
-  create_table "user_words", force: :cascade do |t|
+  create_table "settings", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.integer "dictionary_id", null: false
+    t.integer "words_per_week"
+    t.text "planning_day"
+    t.time "planning_time"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
-    t.index ["dictionary_id"], name: "index_user_words_on_dictionary_id"
-    t.index ["user_id"], name: "index_user_words_on_user_id"
+    t.integer "document_id"
+    t.index ["document_id"], name: "index_settings_on_document_id"
+    t.index ["user_id"], name: "index_settings_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -59,12 +62,12 @@ ActiveRecord::Schema.define(version: 2022_02_06_152011) do
     t.datetime "updated_at", precision: 6, null: false
     t.integer "words_per_week"
     t.integer "document_id"
+    t.integer "current_setting_id"
     t.index ["document_id"], name: "index_users_on_document_id"
   end
 
   add_foreign_key "document_dictionaries", "dictionaries"
   add_foreign_key "document_dictionaries", "documents"
   add_foreign_key "documents", "users"
-  add_foreign_key "user_words", "dictionaries"
-  add_foreign_key "user_words", "users"
+  add_foreign_key "settings", "users"
 end
