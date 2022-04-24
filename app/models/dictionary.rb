@@ -7,5 +7,7 @@ class Dictionary < ApplicationRecord
   has_many :document_dictionaries
   has_many :documents, through: :document_dictionaries
 
-  scope :translate, ->(word) { where(word: word).first.translation }
+  scope :translate, ->(word) do
+    where(word: word).first.translation
+  end
 end

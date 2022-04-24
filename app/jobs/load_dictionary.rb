@@ -29,6 +29,8 @@ class LoadDictionary < ApplicationJob
   end
 
   def translate(word: )
+    File.delete('./telegram/buffer.json') if File.exist?('./telegram/buffer.json')
+
     runner = NodeRunner.new(
       <<~JAVASCRIPT
     const Reverso = require('/Users/andreykuluev/node_modules/reverso-api/index.js');
@@ -50,10 +52,15 @@ class LoadDictionary < ApplicationJob
     )
 
     runner.reverso_translate(word, "Russian")
-    file = File.read('./telegram/buffer.json')
-    responce = JSON.parse(file)
+    if File.exists?("./telegram/buffer.json")
+      file = File.read("./telegram/buffer.json")
+      responce = JSON.parse(file)
+      File.delete('./telegram/buffer.json') if File.exist?("./telegram/buffer.json")
 
-    responce
+      return responce
+    else
+      return nil
+    end
   end
 
   def parse_text(page: )
@@ -86,6 +93,9 @@ class LoadDictionary < ApplicationJob
 
           if(!Dictionary.exists?(word: @word))
             transl_res = translate(word: @word)
+            while transl_res.nil?
+              transl_res = translate(word: @word)
+            end
 
             if transl_res['text'] == @word
               res = "#{@counter}: word: #{@word}, parts_of_speech: #{@parts_of_speech}, level: #{@level}, translate: #{transl_res['translation'].first}"

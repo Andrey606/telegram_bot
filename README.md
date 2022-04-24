@@ -11,3 +11,5 @@ context.call('exports')
 gem install whenever
 whenever --update-crontab
 bundle exec wheneverize .
+
+task 1: ask weekly set of words during the week. for example - 30 words per week we need to learn so ask them all every day during the week

@@ -5,29 +5,12 @@ require 'open-uri'
 require 'rufus-scheduler'
 
 scheduler = Rufus::Scheduler.new
-planning_time_H = []
-planning_time_M = []
-planning_days = []
-
-schedule_str = ''
-
-User.all.each do |user|
-  current_setting = Setting.find(user.current_setting_id)
-  planning_time_H.push(current_setting.planning_time.strftime("%H"))
-  planning_time_M.push(current_setting.planning_time.strftime("%M"))
-  planning_days.push(current_setting.planning_day)
-
-  schedule_str = "#{planning_time_M.join(",")} #{planning_time_H.join(",")} * * #{planning_days.uniq.join(",")}"
-
-  p schedule_str
-end
-
-scheduler.cron schedule_str do
-  p "scheduler.cron: #{Time.now.strftime("%H:%M:%S")}"
-
+scheduler.every '5s' do
   User.all.each do |user|
-    if user.time_to_play_quiz?
-      user.quiz.start
+    if user.time_to_play_quiz? && !user.playing_quiz?
+      quiz = QuizArray.find { |quiz| quiz.user == user }
+      quiz.bot.api.send_message(chat_id: user.chat_id, text: "Time to check words!")
+      quiz.start
     end
   end
 end
@@ -35,15 +18,23 @@ end
 TOKEN = '5254805714:AAHt4EFD3ESvblsIp7lacpyno8lYwpX9e3A'
 TELEGAM = Telegram::Bot::Client.new(TOKEN)
 
-TELEGAM.run do |bot|
+QuizArray = []
 
+TELEGAM.run do |bot|
   User.all.each do |user|
-    user.register_quiz_for_user(bot)
+    QuizArray.push(Quiz.new(user: user, bot: bot)) unless QuizArray.find { |quiz| quiz.user == user }
+    if user.playing_quiz?
+      user.ready!
+      quiz = QuizArray.find { |quiz| quiz.user == user }
+      bot.api.send_message(chat_id: user.chat_id, text: "Smth went wrong :( let's try again!")
+      quiz.start
+    end
   end
 
   bot.listen do |message|
     if !User.exists?(telegram_id: message.from.id)
       user = User.create(telegram_id: message.from.id, name: message.from.first_name, chat_id: message.chat.id)
+      QuizArray.push(Quiz.new(user: user, bot: bot))
     else
       user = User.find_by(telegram_id: message.from.id)
     end
@@ -55,11 +46,10 @@ TELEGAM.run do |bot|
       link_to_file = "https://api.telegram.org/file/bot#{TOKEN}/#{file_info["result"]["file_path"]}"
 
       if doc.valid?
-        LoadDictionary.perform_now(link_to_file, doc.id)
+        LoadDictionary.perform_later(link_to_file, doc.id)
         bot.api.send_message(chat_id: message.chat.id, text: "File loading started. Enter /select_new_list to strat)")
       end
     end
-
     case message.text
     when '/start'
       bot.api.send_message(chat_id: message.chat.id, text: "Hello, #{message.from.first_name}. Upload PDF file with english words please.")
@@ -79,10 +69,10 @@ TELEGAM.run do |bot|
         if !doc.nil?
           Setting.create(user_id: user.id, document_id: doc.id) unless Setting.find_by(user_id: user.id, document_id: doc.id)
           setting = Setting.find_by(user_id: user.id, document_id: doc.id)
-          setting.update(planning_day: [1,2,3,4,5,6,7], planning_time: '14:00')
+          setting.update(planning_day: [0,1,2,3,4,5,6], planning_time: '13:00')
 
           user.update(current_setting_id: setting.id)
-          bot.api.send_message(chat_id: message.chat.id, text: "You have selected: #{doc.file_name}! It has #{doc.dictionaries.count} words. Enter number of words you want to study per week.", reply_markup: markup)
+          bot.api.send_message(chat_id: message.chat.id, text: "You have selected: #{doc.file_name}! Enter number of words you want to study per week.", reply_markup: markup)
           user.need_to_select_number_of_words!
         end
       elsif user.need_to_select_number_of_words?
@@ -91,15 +81,20 @@ TELEGAM.run do |bot|
         user_setting.update(words_per_week: message.text.to_i)
 
         if !user_setting.words_per_week.zero?
-          # answer = "Great! So you need to study following words: \n#{User.current_list(user).join(", \n")}"
-          # bot.api.send_message(chat_id: message.chat.id, text: answer, reply_markup: markup)
+          setting = Setting.find(user.current_setting_id)
+          planning_time = setting.planning_time.strftime("%H:%M")
+          planning_day = setting.planning_day
+
+          answer = "Great! We starting on #{planning_day.map{|day| Date::ABBR_DAYNAMES[day.to_i] }.join(", ")} at #{planning_time}"
+          bot.api.send_message(chat_id: message.chat.id, text: answer)
         end
 
         user.ready!
       elsif user.ready?
 
       elsif user.playing_quiz?
-        user.quiz.check_word(message.text)
+        quiz = QuizArray.find { |quiz| quiz.user == user }
+        quiz.check_word(message.text)
       elsif user.finished_play_quiz?
         # finished to play qiuz
         user.ready!
